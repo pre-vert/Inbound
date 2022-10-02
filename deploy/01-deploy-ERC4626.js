@@ -19,7 +19,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(`ERC20.sol deployed at ${Erc20.address}`)
 
     log("----------------------------------------------------")
-    log("Deploying Rebalancer.sol and waiting for confirmations...")
+    log("Deploying Rebalancer.sol, waiting for confirmations...")
     const rebalancer = await deploy("Rebalancer", {
         from: deployer,
         args: [Erc20.address],    
@@ -29,54 +29,51 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(`Rebalancer.sol deployed at ${rebalancer.address}`)
 
     log("----------------------------------------------------")
-    log("Deploying long instance of Pool.sol and waiting for confirmations...")
-    const argsPoolLong = [
-        "ShareTokenLongPool",
-        "STLP",
+    log("Deploying LongPool.sol, waiting for confirmations...")
+    const argsLongPool = [
         Erc20.address,
         rebalancer.address,
     ]
-    const PoolLong = await deploy("Pool", {
+    const longPool = await deploy("LongPool", {
         from: deployer,
-        args: argsPoolLong,    
+        args: argsLongPool,    
         log: true,
         waitConfirmations: network.config.blockConfirmations || 1,
     })
-    log(`Pool.sol (long) deployed at ${PoolLong.address}`)
+    log(`LongPool.sol (long) deployed at ${longPool.address}`)
 
     log("----------------------------------------------------")
-    log("Deploying short instance of Pool.sol and waiting for confirmations...")
-    const argsPoolShort = [
-        "ShareTokenShortPool",
-        "STSP",
+    log("Deploying ShortPool.sol and waiting for confirmations...")
+    const argsShortPool = [
         Erc20.address,
         rebalancer.address,
     ]
-    const PoolShort = await deploy("Pool", {
+    const shortPool = await deploy("ShortPool", {
         from: deployer,
-        args: argsPoolShort,    
+        args: argsShortPool,    
         log: true,
         waitConfirmations: network.config.blockConfirmations || 1,
     })
-    log(`Pool.sol (short) deployed at ${PoolShort.address}`)
+    log(`Pool.sol (short) deployed at ${shortPool.address}`)
 
-    // // sets short and long pool adresses in Rebalancer
-    // await execute("Rebalancer", {
-    //     from: deployer,
-    //     log: true,
-    // },
-    // "setPoolAddresses",
-    // Erc4626Long.address,
-    // Erc4626Short.address
-    // )
+    // sets short and long pool addresses in Rebalancer
+    await execute("Rebalancer", {
+        from: deployer,
+        log: true,
+    },
+    "setPoolAddresses",
+    longPool.address,
+    shortPool.address
+    )
 
     if (
         !developmentChains.includes(network.name) &&
         process.env.ETHERSCAN_API_KEY
     ) {
         await verify(Erc20.address, argsERC20)
-        await verify(Erc4626Long.address, argsERC4626Long)
-        await verify(Erc4626Short.address, argsERC4626Short)
+        await verify(longPool.address, argsLongPool)
+        await verify(shortPool.address, argsShortPool)
+        await verify(rebalancer.address, [Erc20.address])
     }
 }
 

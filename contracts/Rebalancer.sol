@@ -2,15 +2,15 @@
 pragma solidity 0.8.7;
 
 import "./ERC4626.sol";
+import "./LongPool.sol";
+import "./ShortPool.sol";
 
 contract Rebalancer {
 
   ERC20 public immutable asset;
-  // ERC4626 private immutable _longPool;
-  // ERC4626 private immutable _shortPool; 
-  address public longPool;
-  address public shortPool;
-  address public owner;
+  address public longPoolAddress;
+  address public shortPoolAddress;
+  address public immutable owner;
 
   constructor(ERC20 _asset) {
     asset = _asset;
@@ -21,26 +21,26 @@ contract Rebalancer {
       return address(asset);
   }
 
-  function longPoolAddress() public view  returns (address) {
-      return longPool;
+  function longPool() public view  returns (address) {
+      return longPoolAddress;
   }
 
-  function shortPoolAddress() public view  returns (address) {
-      return shortPool;
+  function shortPool() public view  returns (address) {
+      return shortPoolAddress;
   }
 
-  // function totalAssetsLongPool() public view returns (uint256) {
-  //   return _longPool.totalAssets();
-  // }
+  function totalAssetsLong(LongPool _longPool) public view returns (uint256) {
+    return _longPool.totalAssets();
+  }
 
-  // function totalAssetsShortPool() public view returns (uint256) {
-  //   return _shortPool.totalAssets();
-  // }
+    function totalAssetsShort(ShortPool _shortPool) public view returns (uint256) {
+    return _shortPool.totalAssets();
+  }
 
   modifier onlyOwner() {
-        require(msg.sender == owner, "Not owner");
-        _;
-    }
+    require(msg.sender == owner, "Not owner");
+    _;
+  }
 
   /**
    * @notice Sets or resets the address of the long and short pools
@@ -48,21 +48,22 @@ contract Rebalancer {
    * @dev emits xxx when the addressses are successfuly changed (tbi)
    */
   function setPoolAddresses(
-    address _longPool,
-    address _shortPool
+    address _longPoolAddress,
+    address _shortPoolAddress
     ) public onlyOwner {
-      require(_longPool != address(0), "cannot be 0 address");
-      require(_shortPool != address(0), "cannot be 0 address");
-      // address oldLongPool = longPool;
-      // address oldShortPool = longPool;
-      longPool = _longPool;
-      shortPool = _shortPool;
+      require(_longPoolAddress != address(0), "cannot be 0 address");
+      require(_shortPoolAddress != address(0), "cannot be 0 address");
+      // address oldLongPoolAddress = longPoolAddress;
+      // address oldShortPoolAddress = shortPoolAddress;
+      longPoolAddress = _longPoolAddress;
+      shortPoolAddress = _shortPoolAddress;
       // emit setLongPoolAddresses(oldLongPoolAddress, _longPoolAddress);
       // emit setShortPoolAddresses(oldShortPoolAddress, _shortPoolAddress);
   }
 
-  function rebalance() public {
-
+  // essai transfer long vers short
+  function rebalance(LongPool _longPool) public {
+    _longPool.transferAsset(shortPoolAddress, 10);
   }
 
 }

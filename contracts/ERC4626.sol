@@ -28,33 +28,16 @@ import "./Utils/Math.sol";
 abstract contract ERC4626 is ERC20, IERC4626 {
     using Math for uint256;
 
-    // string private _name;                    // share token
-    // string private _symbol;                  // share token
-    IERC20 public _asset;                    // base token
-    // address private immutable _rebalancerAddress;
-
-    // /**
-    //  * @dev Sets the underlying asset contract. This must be an ERC20-compatible contract (ERC20 or ERC777).
-    //  */
-
-    // constructor(
-    //     string memory name_,        // share token name
-    //     string memory symbol_,      // share token symbol
-    //     IERC20 asset_               // base token
-    // ){   
-    //     _name = name_;
-    //     _symbol = symbol_;
-    //     _asset = asset_;
-    // }
+    IERC20 public Asset;                    // base token
 
     /** @dev See {IERC4626-asset}. */
     function asset() public view virtual override returns (address) {
-        return address(_asset);
+        return address(Asset);
     }
 
     /** @dev See {IERC4626-totalAssets}. */
     function totalAssets() public view virtual override returns (uint256) {
-        return _asset.balanceOf(address(this));
+        return Asset.balanceOf(address(this));
     }
 
     /** @dev See {IERC4626-convertToShares}. */
@@ -219,7 +202,7 @@ abstract contract ERC4626 is ERC20, IERC4626 {
         // slither-disable-next-line reentrancy-no-eth
 
         SafeERC20.safeTransferFrom(
-            _asset,            // asset est transféré du caller au contrat
+            Asset,            // Asset est transféré du caller au contrat
             caller,            // _msgSender() / depositor
             address(this),     // caller auorise avant le contrat
             assets);           // montant asset transféré
@@ -250,7 +233,7 @@ abstract contract ERC4626 is ERC20, IERC4626 {
         // Conclusion: we need to do the transfer after the burn so that any reentrancy would happen after the
         // shares are burned and after the assets are transferred, which is a valid state.
         _burn(owner, shares);
-        SafeERC20.safeTransfer(_asset, receiver, assets);
+        SafeERC20.safeTransfer(Asset, receiver, assets);
 
         emit Withdraw(caller, receiver, owner, assets, shares);
     }

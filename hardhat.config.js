@@ -48,6 +48,9 @@ module.exports = {
  etherscan: {
      apiKey: ETHERSCAN_API_KEY,
  },
+ paths: {
+    sources: "./contracts",
+ },
  gasReporter: {
      enabled: false,
      currency: "USD",
