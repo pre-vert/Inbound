@@ -77,8 +77,8 @@ interface IERC4626 is IERC20, IERC20Metadata {
     function convertToAssets(uint256 shares) external view returns (uint256 assets);
 
     /**
-     * @dev Returns the maximum amount of the underlying asset that can be deposited into the Vault for the receiver,
-     * through a deposit call.
+     * @dev Returns the maximum amount of the underlying asset that can be deposited into
+     * the Vault for the receiver, through a deposit call.
      *
      * - MUST return a limited value if receiver is subject to some deposit limit.
      * - MUST return 2 ** 256 - 1 if there is no limit on the maximum amount of assets that may be deposited.
@@ -152,8 +152,8 @@ interface IERC4626 is IERC20, IERC20Metadata {
     function mint(uint256 shares, address receiver) external returns (uint256 assets);
 
     /**
-     * @dev Returns the maximum amount of the underlying asset that can be withdrawn from the owner balance in the
-     * Vault, through a withdraw call.
+     * @dev Returns the maximum amount of the underlying asset that can be withdrawn
+     * from the owner balance in the Vault, through a withdraw call.
      *
      * - MUST return a limited value if owner is subject to some withdrawal limit or timelock.
      * - MUST NOT revert.

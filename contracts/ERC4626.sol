@@ -28,16 +28,45 @@ import "./Utils/Math.sol";
 abstract contract ERC4626 is ERC20, IERC4626 {
     using Math for uint256;
 
-    IERC20 public Asset;                    // base token
+
+    IERC20 private _asset;                    // base token
+    address private _rebalancer;
+
+    constructor(IERC20 asset_, address rebalancer_){   
+        _asset = asset_;
+        _rebalancer = rebalancer_;
+    }
+
+    /**************************************************************** */
+    //              Rebalancing (non-ERC4626/Vault) logic
+    /**************************************************************** */
+    
+    // Modifier to check that the contract which calls reabalance() is Rebalancer
+    modifier onlyRebalancer() {
+        require(msg.sender == _rebalancer, "ERC4626: Not rebalancer");
+        _;
+    }
+
+    function transferAssetTo(address oppositePool, uint256 amount)
+      public onlyRebalancer {
+      require(oppositePool != address(0), "cannot be 0 address");
+      require(amount <= totalAssets(), "cannot transfer more than total asset");
+      _asset.transfer(oppositePool, amount);
+      // emit setOppositePoolAddress(oldOppositePoolAddress, _oppositePoolAddress);
+    }
+
+    /**************************************************************** */
+    //                     ERC4626 logic
+    /**************************************************************** */
 
     /** @dev See {IERC4626-asset}. */
     function asset() public view virtual override returns (address) {
-        return address(Asset);
+        return address(_asset);
     }
 
-    /** @dev See {IERC4626-totalAssets}. */
+    // total amount of asset managed by the pool
     function totalAssets() public view virtual override returns (uint256) {
-        return Asset.balanceOf(address(this));
+        return _asset.balanceOf(address(this));
     }
 
     /** @dev See {IERC4626-convertToShares}. */
@@ -51,6 +80,7 @@ abstract contract ERC4626 is ERC20, IERC4626 {
     }
 
     /** @dev See {IERC4626-maxDeposit}. */
+    // The Vault is closed to deposit if not collateralized
     function maxDeposit(address) public view virtual override returns (uint256) {
         return _isVaultCollateralized() ? type(uint256).max : 0;
     }
@@ -60,7 +90,7 @@ abstract contract ERC4626 is ERC20, IERC4626 {
         return type(uint256).max;
     }
 
-    /** @dev See {IERC4626-maxWithdraw}. */
+    // Max amount of asset that can be withdrawn from the pool by owner
     function maxWithdraw(address owner) public view virtual override returns (uint256) {
         return _convertToAssets(balanceOf(owner), Math.Rounding.Down);
     }
@@ -115,7 +145,7 @@ abstract contract ERC4626 is ERC20, IERC4626 {
     function withdraw(
         uint256 assets,
         address receiver,    // the one who receives the base tokens
-        address owner        // the Vault
+        address owner        // the one who owns the shares to be redeemed
     ) public virtual override returns (uint256) {
         require(assets <= maxWithdraw(owner), "ERC4626: withdraw more than max");
 
@@ -202,7 +232,7 @@ abstract contract ERC4626 is ERC20, IERC4626 {
         // slither-disable-next-line reentrancy-no-eth
 
         SafeERC20.safeTransferFrom(
-            Asset,            // Asset est transféré du caller au contrat
+            _asset,            // _asset est transféré du caller au contrat
             caller,            // _msgSender() / depositor
             address(this),     // caller auorise avant le contrat
             assets);           // montant asset transféré
@@ -219,7 +249,7 @@ abstract contract ERC4626 is ERC20, IERC4626 {
     function _withdraw(
         address caller,      // _msgSender()
         address receiver,    // the one who receives the base tokens
-        address owner,       // the Vault
+        address owner,       // the one who owns the shares to be redeemed
         uint256 assets,
         uint256 shares
     ) internal virtual {
@@ -233,11 +263,12 @@ abstract contract ERC4626 is ERC20, IERC4626 {
         // Conclusion: we need to do the transfer after the burn so that any reentrancy would happen after the
         // shares are burned and after the assets are transferred, which is a valid state.
         _burn(owner, shares);
-        SafeERC20.safeTransfer(Asset, receiver, assets);
+        SafeERC20.safeTransfer(_asset, receiver, assets);
 
         emit Withdraw(caller, receiver, owner, assets, shares);
     }
 
+    // Vault not collateralized if totalAsset() == 0 AND totalSupply() > 0
     function _isVaultCollateralized() private view returns (bool) {
         return totalAssets() > 0 || totalSupply() == 0;
     }
