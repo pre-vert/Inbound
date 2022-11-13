@@ -25,34 +25,35 @@ import "./Utils/Math.sol";
  *
  * _Available since v4.7._
  */
+
 abstract contract ERC4626 is ERC20, IERC4626 {
     using Math for uint256;
 
+    ERC20 internal asset;                    // base token
 
-    IERC20 private _asset;                    // base token
-    address private _rebalancer;
-
-    constructor(IERC20 asset_, address rebalancer_){   
-        _asset = asset_;
-        _rebalancer = rebalancer_;
-    }
-
-    /**************************************************************** */
-    //              Rebalancing (non-ERC4626/Vault) logic
-    /**************************************************************** */
+    uint256 public price = 1;
+    uint256 public oldPrice = price;
     
-    // Modifier to check that the contract which calls reabalance() is Rebalancer
-    modifier onlyRebalancer() {
-        require(msg.sender == _rebalancer, "ERC4626: Not rebalancer");
-        _;
+
+    constructor(ERC20 asset_){   
+        asset = asset_;
     }
 
-    function transferAssetTo(address oppositePool, uint256 amount)
-      public onlyRebalancer {
-      require(oppositePool != address(0), "cannot be 0 address");
-      require(amount <= totalAssets(), "cannot transfer more than total asset");
-      _asset.transfer(oppositePool, amount);
-      // emit setOppositePoolAddress(oldOppositePoolAddress, _oppositePoolAddress);
+    /**************************************************************** */
+    //              Price (non-ERC4626/Vault logic)
+    /**************************************************************** */
+
+    function getPrice() public view returns (uint256) {
+        return price;
+    }
+
+    function getOldPrice() public view returns (uint256) {
+        return oldPrice;
+    }
+
+    function setPrice(uint256 _price) public returns (uint256) {
+        oldPrice = price;
+        return price = _price;
     }
 
     /**************************************************************** */
@@ -60,13 +61,13 @@ abstract contract ERC4626 is ERC20, IERC4626 {
     /**************************************************************** */
 
     /** @dev See {IERC4626-asset}. */
-    function asset() public view virtual override returns (address) {
-        return address(_asset);
+    function assetAddress() public view virtual override returns (address) {
+        return address(asset);
     }
 
     // total amount of asset managed by the pool
     function totalAssets() public view virtual override returns (uint256) {
-        return _asset.balanceOf(address(this));
+        return asset.balanceOf(address(this));
     }
 
     /** @dev See {IERC4626-convertToShares}. */
@@ -124,33 +125,31 @@ abstract contract ERC4626 is ERC20, IERC4626 {
     function deposit(uint256 assets, address receiver) public virtual override returns (uint256) {
         require(assets <= maxDeposit(receiver), "ERC4626: deposit more than max");
         require(assets > 0, "ERC4626: Deposit less than Zero");
-
         uint256 shares = previewDeposit(assets);
         _deposit(_msgSender(), receiver, assets, shares);
-
+        // the one who deposits, the one who receives shares, value deposited, shares received
         return shares;
     }
 
     /** @dev See {IERC4626-mint}. */
     function mint(uint256 shares, address receiver) public virtual override returns (uint256) {
         require(shares <= maxMint(receiver), "ERC4626: mint more than max");
-
         uint256 assets = previewMint(shares);
         _deposit(_msgSender(), receiver, assets, shares);
-
+        // the one who deposits, the one wh receives shares, value deposited, shares received
         return assets;
     }
 
     /** @dev See {IERC4626-withdraw}. */
     function withdraw(
         uint256 assets,
-        address receiver,    // the one who receives the base tokens
-        address owner        // the one who owns the shares to be redeemed
+        address receiver,    // the one who receives the assets
+        address owner        // the one who owns the shares to be redeemed (burned)
     ) public virtual override returns (uint256) {
         require(assets <= maxWithdraw(owner), "ERC4626: withdraw more than max");
-
         uint256 shares = previewWithdraw(assets);
         _withdraw(_msgSender(), receiver, owner, assets, shares);
+        // the one who withdraws, receives the assets, owns the shares
 
         return shares;
     }
@@ -171,26 +170,32 @@ abstract contract ERC4626 is ERC20, IERC4626 {
 
     /**
      * @dev Internal conversion function (from assets to shares) with support for rounding direction.
-     *
-     * Will revert if assets > 0, totalSupply > 0 and totalAssets = 0. That corresponds to a case where any asset
-     * would represent an infinite amount of shares.
+     * Will revert if assets > 0, totalSupply > 0 and totalAssets = 0. That corresponds
+     * to a case where any asset would represent an infinite amount of shares.
      */
-    function _convertToShares(uint256 assets, Math.Rounding rounding) internal view virtual returns (uint256 shares) {
+    function _convertToShares(uint256 assets, Math.Rounding rounding)
+        internal view virtual returns (uint256 shares) {
         uint256 supply = totalSupply();
         return
             (assets == 0 || supply == 0)
                 ? _initialConvertToShares(assets, rounding)
                 : assets.mulDiv(supply, totalAssets(), rounding);
     }
+    /*
+        a = asset
+        B = totalAssets()
+        T = totalSupply()
+        s = shares to mint
+        (T + s) / T = (a + B) / B 
+        s = aT / B
+    */
 
     /**
      * @dev Internal conversion function (from assets to shares) to apply when the vault is empty.
      * NOTE: Make sure to keep this function consistent with {_initialConvertToAssets} when overriding it.
      */
-    function _initialConvertToShares(
-        uint256 assets,
-        Math.Rounding /*rounding*/
-    ) internal view virtual returns (uint256 shares) {
+    function _initialConvertToShares(uint256 assets, Math.Rounding)
+    internal view virtual returns (uint256 shares) {
         return assets;
     }
 
@@ -200,42 +205,48 @@ abstract contract ERC4626 is ERC20, IERC4626 {
     function _convertToAssets(uint256 shares, Math.Rounding rounding) internal view virtual returns (uint256 assets) {
         uint256 supply = totalSupply();
         return
-            (supply == 0) ? _initialConvertToAssets(shares, rounding) : shares.mulDiv(totalAssets(), supply, rounding);
+            (supply == 0)
+                ? _initialConvertToAssets(shares, rounding)
+                : shares.mulDiv(totalAssets(), supply, rounding);
     }
+    /*
+        a = asset
+        B = totalAsset()
+        T = totalSupply()
+        s = shares to burn
+        (T - s) / T = (B - a) / B
+        a = sB / T
+    */
 
     /**
      * @dev Internal conversion function (from shares to assets) to apply when the vault is empty.
-     *
      * NOTE: Make sure to keep this function consistent with {_initialConvertToShares} when overriding it.
      */
-    function _initialConvertToAssets(
-        uint256 shares,
-        Math.Rounding /*rounding*/
-    ) internal view virtual returns (uint256 assets) {
+    function _initialConvertToAssets(uint256 shares, Math.Rounding)
+    internal view virtual returns (uint256 assets) {
         return shares;
     }
 
     /**
      * @dev Deposit/mint common workflow.
+     * If _asset is ERC777, `transferFrom` can trigger a reenterancy BEFORE the transfer happens through
+       the `tokensToSend` hook. On the other hand, the `tokenReceived` hook, that is triggered after the
+       transfer, calls the vault, which is assumed not malicious.
+       Conclusion: we need to do the transfer before we mint so that any reentrancy would happen before the
+       assets are transferred and before the shares are minted, which is a valid state.
+       slither-disable-next-line reentrancy-no-eth
      */
     function _deposit(
-        address caller,          // depositor (_msgSender())
+        address caller,          // from : the one who deposits (_msgSender())
         address receiver,        // the one who receives shares
         uint256 assets,
         uint256 shares
     ) internal virtual {
-        // If _asset is ERC777, `transferFrom` can trigger a reenterancy BEFORE the transfer happens through
-        // the `tokensToSend` hook. On the other hand, the `tokenReceived` hook, that is triggered after the
-        // transfer, calls the vault, which is assumed not malicious.
-        // Conclusion: we need to do the transfer before we mint so that any reentrancy would happen before the
-        // assets are transferred and before the shares are minted, which is a valid state.
-        // slither-disable-next-line reentrancy-no-eth
-
         SafeERC20.safeTransferFrom(
-            _asset,            // _asset est transféré du caller au contrat
-            caller,            // _msgSender() / depositor
-            address(this),     // caller auorise avant le contrat
-            assets);           // montant asset transféré
+            asset,            // _asset est transféré du caller au contrat
+            caller,            // from : _msgSender() / depositor
+            address(this),     // to : caller autorise avant le contrat
+            assets);           // value : montant asset transféré
         //? shareHoldings[msg.sender] += shares;
         _mint(receiver, shares);
 
@@ -245,10 +256,15 @@ abstract contract ERC4626 is ERC20, IERC4626 {
     /**
      * @dev Withdraw/redeem common workflow.
      * _withdraw(_msgSender(), receiver, owner, assets, shares);
+     * If _asset is ERC777, `transfer` can trigger a reentrancy AFTER the transfer happens through the
+       `tokensReceived` hook. On the other hand, the `tokensToSend` hook, that is triggered before the transfer,
+       calls the vault, which is assumed not malicious.
+       Conclusion: we need to do the transfer after the burn so that any reentrancy would happen after the
+       shares are burned and after the assets are transferred, which is a valid state.
      */
     function _withdraw(
         address caller,      // _msgSender()
-        address receiver,    // the one who receives the base tokens
+        address receiver,    // the one who receives the assets
         address owner,       // the one who owns the shares to be redeemed
         uint256 assets,
         uint256 shares
@@ -256,14 +272,8 @@ abstract contract ERC4626 is ERC20, IERC4626 {
         if (caller != owner) {
             _spendAllowance(owner, caller, shares);
         }
-
-        // If _asset is ERC777, `transfer` can trigger a reentrancy AFTER the transfer happens through the
-        // `tokensReceived` hook. On the other hand, the `tokensToSend` hook, that is triggered before the transfer,
-        // calls the vault, which is assumed not malicious.
-        // Conclusion: we need to do the transfer after the burn so that any reentrancy would happen after the
-        // shares are burned and after the assets are transferred, which is a valid state.
         _burn(owner, shares);
-        SafeERC20.safeTransfer(_asset, receiver, assets);
+        SafeERC20.safeTransfer(asset, receiver, assets);
 
         emit Withdraw(caller, receiver, owner, assets, shares);
     }
@@ -272,8 +282,5 @@ abstract contract ERC4626 is ERC20, IERC4626 {
     function _isVaultCollateralized() private view returns (bool) {
         return totalAssets() > 0 || totalSupply() == 0;
     }
-
-
-
 
 }

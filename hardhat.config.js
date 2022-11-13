@@ -52,17 +52,17 @@ module.exports = {
     sources: "./contracts",
  },
  gasReporter: {
-     enabled: false,
+     enabled: true,
      currency: "USD",
      outputFile: "gas-report.txt",
      noColors: true,
      coinmarketcap: COINMARKETCAP_API_KEY,
-     token: "BNB"
+     token: "ETH"
  },
  namedAccounts: {
      deployer: {
-         default: 0, // here this will by default take the first account as deployer
-         1: 0, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
+         default: 0, // by default take the first account as deployer
+         1: 0,       // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
      },
  },
  mocha: {

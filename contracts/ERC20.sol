@@ -10,8 +10,9 @@ import "./Utils/Context.sol";
 /**
  * @dev Implementation of the {IERC20} interface.
  *
- * This implementation is agnostic to the way tokens are created. This means that a supply mechanism
- * has to be added in a derived contract using {_mint}. For a generic mechanism see {ERC20PresetMinterPauser}.
+ * This implementation is agnostic to the way tokens are created. This means that
+ * a supply mechanism has to be added in a derived contract using {_mint}.
+ * For a generic mechanism see {ERC20PresetMinterPauser}.
  *
  * TIP: For a detailed writeup see our guide to implement supply mechanisms:
  * https://forum.openzeppelin.com/t/how-to-implement-erc20-supply-mechanisms/226[How
@@ -28,7 +29,9 @@ import "./Utils/Context.sol";
  * Finally, the non-standard {decreaseAllowance} and {increaseAllowance} functions have
  * been added to mitigate the well-known issues around setting allowances. See {IERC20-approve}.
  */
+
 contract ERC20 is Context, IERC20, IERC20Metadata {
+
     mapping(address => uint256) private _balances;
 
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -39,11 +42,11 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     uint256 private _initialSupply;
 
     /**
-     * @dev Sets the values for {name} and {symbol}.
-     * The default value of {decimals} is 18. To select a different value for {decimals}
-     * you should overload it. All two of these values are immutable: they can only be set once during
-     * construction.
+     * @dev Sets the values for {name} and {symbol}. The default value of {decimals} is 18.
+     * To select a different value for {decimals}, you should overload it.
+     * All two of these values are immutable: they can only be set once during construction.
      */
+
     constructor(string memory name_, string memory symbol_, uint256 initialSupply_) {
         _name = name_;
         _symbol = symbol_;
@@ -100,15 +103,12 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     }
 
     /**
-     * @dev See {IERC20-approve}.
-     *
+     * @dev See {IERC20-approve}
      * NOTE: If `amount` is the maximum `uint256`, the allowance is not updated on
      * `transferFrom`. This is semantically equivalent to an infinite approval.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
+     * Requirement: `spender` cannot be the zero address.
      */
+
     function approve(address spender, uint256 amount) public virtual override returns (bool) {
         address owner = _msgSender();
         _approve(owner, spender, amount);
@@ -117,12 +117,9 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 
     /**
      * @dev See {IERC20-transferFrom}.
-     *
      * Emits an {Approval} event indicating the updated allowance. This is not
      * required by the EIP. See the note at the beginning of {ERC20}.
-     *
      * NOTE: Does not update the allowance if the current allowance is the maximum `uint256`.
-     *
      * Requirements:
      * - `from` and `to` cannot be the zero address.
      * - `from` must have a balance of at least `amount`.
@@ -138,7 +135,6 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 
     /**
      * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
      * This is an alternative to {approve} that can be used as a mitigation for
      * problems described in {IERC20-approve}.
      *
@@ -231,13 +227,9 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     }
 
     /**
-     * @dev Destroys `amount` tokens from `account`, reducing the
-     * total supply.
-     *
+     * @dev Destroys `amount` tokens from `account`, reducing the total supply.
      * Emits a {Transfer} event with `to` set to the zero address.
-     *
      * Requirements:
-     *
      * - `account` cannot be the zero address.
      * - `account` must have at least `amount` tokens.
      */
@@ -261,14 +253,10 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
      * This internal function is equivalent to `approve`, and can be used to
      * e.g. set automatic allowances for certain subsystems, etc.
-     *
      * Emits an {Approval} event.
-     *
      * Requirements:
-     *
      * - `owner` cannot be the zero address.
      * - `spender` cannot be the zero address.
      */
@@ -282,10 +270,8 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 
     /**
      * @dev Updates `owner` s allowance for `spender` based on spent `amount`.
-     *
      * Does not update the allowance amount in case of infinite allowance.
      * Revert if not enough allowance is available.
-     *
      * Might emit an {Approval} event.
      */
     function _spendAllowance(
@@ -310,7 +296,6 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * - when `from` is zero, `amount` tokens will be minted for `to`.
      * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
      * - `from` and `to` are never both zero.
-     *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
     function _beforeTokenTransfer(
@@ -322,15 +307,12 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     /**
      * @dev Hook that is called after any transfer of tokens. This includes
      * minting and burning.
-     *
      * Calling conditions:
-     *
      * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
      * has been transferred to `to`.
      * - when `from` is zero, `amount` tokens have been minted for `to`.
      * - when `to` is zero, `amount` of ``from``'s tokens have been burned.
      * - `from` and `to` are never both zero.
-     *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
     function _afterTokenTransfer(

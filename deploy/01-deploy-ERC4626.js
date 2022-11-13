@@ -19,24 +19,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(`ERC20.sol deployed at ${Erc20.address}`)
 
     log("----------------------------------------------------")
-    log("Deploying Rebalancer.sol, waiting for confirmations...")
-    const rebalancer = await deploy("Rebalancer", {
-        from: deployer,
-        args: [Erc20.address],    
-        log: true,
-        waitConfirmations: network.config.blockConfirmations || 1,
-    })
-    log(`Rebalancer.sol deployed at ${rebalancer.address}`)
-
-    log("----------------------------------------------------")
     log("Deploying LongPool.sol, waiting for confirmations...")
-    const argsLongPool = [
-        Erc20.address,
-        rebalancer.address,
-    ]
+    const argsLongPool = [Erc20.address]
     const longPool = await deploy("LongPool", {
         from: deployer,
-        args: argsLongPool,    
+        args: argsLongPool,
         log: true,
         waitConfirmations: network.config.blockConfirmations || 1,
     })
@@ -44,10 +31,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log("----------------------------------------------------")
     log("Deploying ShortPool.sol and waiting for confirmations...")
-    const argsShortPool = [
-        Erc20.address,
-        rebalancer.address,
-    ]
+    const argsShortPool = [Erc20.address]
     const shortPool = await deploy("ShortPool", {
         from: deployer,
         args: argsShortPool,    
@@ -56,14 +40,21 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     })
     log(`Pool.sol (short) deployed at ${shortPool.address}`)
 
-    // sets short and long pool addresses in Rebalancer
-    await execute("Rebalancer", {
+    // cross records short and long pool addresses
+    await execute("LongPool", {
         from: deployer,
         log: true,
     },
-    "setPoolAddresses",
-    longPool.address,
+    "recordShortPoolAddress",
     shortPool.address
+    )
+
+    await execute("ShortPool", {
+        from: deployer,
+        log: true,
+    },
+    "recordLongPoolAddress",
+    longPool.address
     )
 
     if (
@@ -73,11 +64,12 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         await verify(Erc20.address, argsERC20)
         await verify(longPool.address, argsLongPool)
         await verify(shortPool.address, argsShortPool)
-        await verify(rebalancer.address, [Erc20.address])
+        await verify(balancer.address, [Erc20.address])
     }
 }
 
 module.exports.tags = ["all", "erc20", "erc4626"]
+
 
 
 // sets short pool address in long pool contract
@@ -98,3 +90,5 @@ module.exports.tags = ["all", "erc20", "erc4626"]
     // "setOppositePoolAddress",
     // Erc4626Long.address
     // )
+
+    // console.log(network.config)

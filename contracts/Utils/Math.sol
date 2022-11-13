@@ -7,6 +7,7 @@ pragma solidity 0.8.7;
  * @dev Standard math utilities missing in the Solidity language.
  */
 library Math {
+    
     enum Rounding {
         Down, // Toward negative infinity
         Up, // Toward infinity
@@ -48,7 +49,8 @@ library Math {
     }
 
     /**
-     * @notice Calculates floor(x * y / denominator) with full precision. Throws if result overflows a uint256 or denominator == 0
+     * @notice Calculates floor(x * y / denominator) with full precision.
+     * Throws if result overflows a uint256 or denominator == 0
      * @dev Original credit to Remco Bloemen under MIT license (https://xn--2-umb.com/21/muldiv)
      * with further edits by Uniswap Labs also under MIT license.
      */
@@ -58,9 +60,10 @@ library Math {
         uint256 denominator
     ) internal pure returns (uint256 result) {
         unchecked {
-            // 512-bit multiply [prod1 prod0] = x * y. Compute the product mod 2^256 and mod 2^256 - 1, then use
-            // use the Chinese Remainder Theorem to reconstruct the 512 bit result. The result is stored in two 256
-            // variables such that product = prod1 * 2^256 + prod0.
+            // 512-bit multiply [prod1 prod0] = x * y. Compute the product mod 2^256 and
+            // mod 2^256 - 1, then use the Chinese Remainder Theorem to reconstruct the
+            // 512 bit result. The result is stored in two 256 variables
+            // such that product = prod1 * 2^256 + prod0.
             uint256 prod0; // Least significant 256 bits of the product
             uint256 prod1; // Most significant 256 bits of the product
             assembly {
