@@ -40,12 +40,22 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     })
     log(`Pool.sol (short) deployed at ${shortPool.address}`)
 
+    log("----------------------------------------------------")
+    log("Deploying Computer.sol, waiting for confirmations...")
+    const computer = await deploy("Computer", {
+        from: deployer,
+        args: [Erc20.address, longPool.address, shortPool.address],    
+        log: true,
+        waitConfirmations: network.config.blockConfirmations || 1,
+    })
+    log(`Rebalancer.sol deployed at ${computer.address}`)
+
     // cross records short and long pool addresses
     await execute("LongPool", {
         from: deployer,
         log: true,
     },
-    "recordShortPoolAddress",
+    "setShortPoolAddress",
     shortPool.address
     )
 
@@ -53,8 +63,25 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         from: deployer,
         log: true,
     },
-    "recordLongPoolAddress",
+    "setLongPoolAddress",
     longPool.address
+    )
+
+    // records computer address
+    await execute("LongPool", {
+        from: deployer,
+        log: true,
+    },
+    "setComputerAddress",
+    computer.address
+    )
+
+    await execute("ShortPool", {
+        from: deployer,
+        log: true,
+    },
+    "setComputerAddress",
+    computer.address
     )
 
     if (

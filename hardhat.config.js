@@ -7,7 +7,6 @@ require("@nomiclabs/hardhat-ethers");
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config()
 
-
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 /**

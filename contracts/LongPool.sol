@@ -2,17 +2,21 @@
 
 pragma solidity 0.8.7;
 
-import "./ERC4626.sol";
+import "./Pool.sol";
 import "./ShortPool.sol";
+import "./Computer.sol";
 
-contract LongPool is ERC4626 {
+contract LongPool is ERC20, IERC4626, ERC4626, Pool {
 
     string private constant NAME = "IBShareLong";
     string private constant SYMBOL = "IBSL";
     uint256 private constant INITIAL_SUPPLY = 0;
-    // ERC20 internal immutable asset;
-    address public immutable owner;    
+    // ERC20 internal immutable asset;   
     address public shortPoolAddress;
+    address public computerAddress;
+    ShortPool public shortPool = ShortPool(shortPoolAddress);
+    Computer public computer = Computer(computerAddress);
+    address public immutable owner; 
 
     /**
      * @dev sets ERC20 metadata of ERC4626
@@ -27,36 +31,33 @@ contract LongPool is ERC4626 {
     }
 
     /**
-     * @dev Returns opposite pool address.
-     */
-    function getShortPoolAddress() public view returns (address) {
-        return shortPoolAddress;
-    }
-
-    /**
-   * @notice Sets or resets the address of the long and short pools
-   * @dev Only callable by contract owner
-   * @dev emits xxx when the addressses are successfuly changed (tbi)
+   * @notice (Re)sets the address of the short pool
    */
-  function recordShortPoolAddress(address _shortPoolAddress)
+  function setShortPoolAddress(address _shortPoolAddress)
     public onlyOwner {
-        require(_shortPoolAddress != address(0), "cannot be 0 address");
-        // address oldShortPoolAddress = shortPoolAddress;
-        shortPoolAddress = _shortPoolAddress;
-        // emit setShortPoolAddresses(oldShortPoolAddress, _shortPoolAddress);
+      require(_shortPoolAddress != address(0), "cannot be 0 address");
+      shortPoolAddress = _shortPoolAddress;
   }
 
-  function transferToShortPool(uint amount) private {
-    require(shortPoolAddress != address(0), "cannot be 0 address");
-    require(amount <= totalAssets(), "cannot transfer more than total asset");
-    transfer(shortPoolAddress, amount);
+   /**
+   * @notice (Re)sets the address of the computer
+   */
+  function setComputerAddress(address _computerAddress)
+    public onlyOwner {
+      require(_computerAddress != address(0), "cannot be 0 address");
+      computerAddress = _computerAddress;
   }
+
+  // function transferToShortPool(uint amount) private {
+  //   require(shortPoolAddress != address(0), "cannot be 0 address");
+  //   require(amount <= totalAssets(), "cannot transfer more than total asset");
+  //   transfer(shortPoolAddress, amount);
+  // }
 
   function transferFromShortPool(uint amount) private {
-    ShortPool shortPool = ShortPool(shortPoolAddress);
     require(amount <= shortPool.totalAssets(), "cannot transfer more than total asset");
     shortPool.transfer(address(this), amount);
-    //emit setOppositePoolAddress(oldOppositePoolAddress, _oppositePoolAddress);
+    // emit setOppositePoolAddress(oldOppositePoolAddress, _oppositePoolAddress);
   }
 
   modifier onlyOwner() {

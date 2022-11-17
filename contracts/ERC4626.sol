@@ -30,10 +30,8 @@ abstract contract ERC4626 is ERC20, IERC4626 {
     using Math for uint256;
 
     ERC20 internal asset;                    // base token
-
-    uint256 public price = 1;
-    uint256 public oldPrice = price;
-    
+    // uint256 public price = 1;
+    // uint256 public oldPrice = price;
 
     constructor(ERC20 asset_){   
         asset = asset_;
@@ -43,18 +41,11 @@ abstract contract ERC4626 is ERC20, IERC4626 {
     //              Price (non-ERC4626/Vault logic)
     /**************************************************************** */
 
-    function getPrice() public view returns (uint256) {
-        return price;
-    }
-
-    function getOldPrice() public view returns (uint256) {
-        return oldPrice;
-    }
-
-    function setPrice(uint256 _price) public returns (uint256) {
-        oldPrice = price;
-        return price = _price;
-    }
+    // function transferToPool(uint _amount, address _poolAddress) private {
+    //     require(_poolAddress != address(0), "cannot be 0 address");
+    //     require(_amount <= totalAssets(), "cannot transfer more than total asset");
+    //     transfer(_poolAddress, _amount);
+    // }
 
     /**************************************************************** */
     //                     ERC4626 logic
