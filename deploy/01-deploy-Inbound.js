@@ -6,7 +6,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy, log , execute} = deployments
     const { deployer } = await getNamedAccounts()
     // const chainId = network.config.chainId
-
+    
     log("----------------------------------------------------")
     log("Deploying ERC20.sol and waiting for confirmations...")
     const argsERC20 = ["BaseToken", "BTK", 100]
@@ -42,15 +42,18 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log("----------------------------------------------------")
     log("Deploying Computer.sol, waiting for confirmations...")
+    const argsComputer = [Erc20.address, longPool.address, shortPool.address, 100, 3]
     const computer = await deploy("Computer", {
         from: deployer,
-        args: [Erc20.address, longPool.address, shortPool.address],    
+        args: argsComputer,    
         log: true,
         waitConfirmations: network.config.blockConfirmations || 1,
     })
     log(`Rebalancer.sol deployed at ${computer.address}`)
 
-    // cross records short and long pool addresses
+    log("----------------------------------------------------")
+    log("Setting pool and computer addresses...")
+
     await execute("LongPool", {
         from: deployer,
         log: true,
@@ -67,7 +70,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     longPool.address
     )
 
-    // records computer address
     await execute("LongPool", {
         from: deployer,
         log: true,
@@ -84,6 +86,48 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     computer.address
     )
 
+    if (!developmentChains.includes(network.name)
+    ) {
+        log("----------------------------------------------------")
+        log("Approves 30 in long pool")
+    
+        await execute("ERC20", {
+            from: deployer, log: true
+            },
+            "approve",
+            longPool.address, 30
+        )
+
+        log("----------------------------------------------------")
+        log("Deposits 30 in long pool")
+        await execute("LongPool", {
+            from: deployer, log: true
+            },
+            "deposit",
+            30, deployer
+        )
+
+        log("----------------------------------------------------")
+        log("Approves 30 in short pool")
+    
+        await execute("ERC20", {
+            from: deployer, log: true
+            },
+            "approve",
+            shortPool.address, 30
+        )
+
+        log("----------------------------------------------------")
+        log("Deposits 30 in short pool")
+
+        await execute("ShortPool", {
+            from: deployer, log: true
+            },
+            "deposit",
+            30, deployer
+        )
+    }
+
     if (
         !developmentChains.includes(network.name) &&
         process.env.ETHERSCAN_API_KEY
@@ -91,31 +135,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         await verify(Erc20.address, argsERC20)
         await verify(longPool.address, argsLongPool)
         await verify(shortPool.address, argsShortPool)
-        await verify(balancer.address, [Erc20.address])
+        await verify(computer.address, argsComputer)
     }
 }
 
 module.exports.tags = ["all", "erc20", "erc4626"]
-
-
-
-// sets short pool address in long pool contract
-    // await execute("Erc4626Long",
-    // {
-    //     from: deployer,
-    //     log: true,
-    // },
-    // "setOppositePoolAddress",
-    // Erc4626Short.address
-    // )
-
-    // // sets long pool address in short pool contract
-    // await execute("ERC4626Short", {
-    //     from: deployer,
-    //     log: true,
-    // },
-    // "setOppositePoolAddress",
-    // Erc4626Long.address
-    // )
-
-    // console.log(network.config)

@@ -14,26 +14,26 @@ describe("ERC20", async function () {
     })
 
     describe("Test constructor", function () {
-        it("1.1 Sets the token name correctly", async () => {
+        it("t0.1 Sets the token name correctly", async () => {
             const response = await ERC20.name()
             assert.equal(response, "BaseToken")
         })
     })
     
     describe("Test transfer()", async function () {
-        it("1.2 Fails if transfer to 0x address", async function () {
+        it("t0.2 Fails if transfer to 0x address", async function () {
             await expect(ERC20.transfer(nullAddress, transferValue)).to.be.revertedWith(
                 "ERC20: transfer to the zero address"
             )
         })
-        it("1.3 Fails if transfer amount exceeds balance", async function () {
+        it("t0.3 Fails if transfer amount exceeds balance", async function () {
             const accounts = await ethers.getSigners()
             const balanceSender = await ERC20.balanceOf(accounts[0].address)
             await expect(ERC20.transfer(accounts[1].address,balanceSender+1)).to.be.revertedWith(
                 "ERC20: transfer amount exceeds balance"
             )
         })
-        it("1.4 Transfer changes sender and receiver balances", async function () {
+        it("t0.4 Transfer changes sender and receiver balances", async function () {
             const accounts = await ethers.getSigners()
             const startingBalanceSender = await ERC20.balanceOf(accounts[0].address)
             const startingBalanceReceiver = await ERC20.balanceOf(accounts[1].address)
@@ -52,7 +52,7 @@ describe("ERC20", async function () {
     })
 
     describe("Test approve()", async function () {
-        it("1.5 Approve changes allowance", async function () {
+        it("t0.5 Approve changes allowance", async function () {
             const accounts = await ethers.getSigners()
             const startingAllowance = await ERC20.allowance(accounts[0].address, accounts[1].address)
             console.log("Starting allowance: " + startingAllowance)
@@ -65,7 +65,7 @@ describe("ERC20", async function () {
     })
 
     describe("Test transferFrom()", async function () {
-        it("1.6 Fails if transferFrom amount exceeds allowance", async function () {
+        it("t0.6 Fails if transferFrom amount exceeds allowance", async function () {
             const accounts = await ethers.getSigners()
             await ERC20.approve(accounts[1].address, allowedValue)
             const allowance = await ERC20.allowance(
@@ -78,7 +78,7 @@ describe("ERC20", async function () {
                 allowance+1
             )).to.be.revertedWith("ERC20: insufficient allowance")
         })
-        it("1.7 TransferFrom changes allowance", async function () {
+        it("t0.7 TransferFrom changes allowance", async function () {
             const accounts = await ethers.getSigners()
             await ERC20.approve(
                 accounts[1].address,
@@ -96,7 +96,7 @@ describe("ERC20", async function () {
                 accounts[0].address, accounts[1].address)
             assert.equal(responseAllowance, Number(endingAllowance))
         })
-        it("1.8 TransferFrom changes sender and receiver balances", async function () {
+        it("t0.8 TransferFrom changes sender and receiver balances", async function () {
             const accounts = await ethers.getSigners()
             await ERC20.approve(accounts[1].address, allowedValue)
             const startingAllowance = await ERC20.allowance(

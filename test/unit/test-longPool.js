@@ -1,40 +1,42 @@
 const { deployments, ethers } = require("hardhat")
 const { assert } = require("chai")
-const assetDeposit = 10
+const assetDeposit = 20
+const assetDeposit2 = 10
 // const assetTooBigDeposit = 150
-const assetWithdraw = 5
+const assetWithdraw = 10
 // const assetTooBigWithdraw = 20
-const allowedValue = 50
-const transferValue = 20
+const allowedValue = 90
+const transferValue = 30
 
-describe("LongPool", async function () {
-    let LongPool, ERC20, deployer
+describe("Tests of LongPool", async function () {
+    let Computer, LongPool, ShortPool, ERC20, deployer
     beforeEach(async function () {
         deployer = (await getNamedAccounts()).deployer
         await deployments.fixture(["all"])
-        ERC20 = await ethers.getContract("ERC20", deployer)      // get the most recent deployed contract
-        Balancer = await ethers.getContract("Balancer", deployer)
+        ERC20 = await ethers.getContract("ERC20", deployer)         // get the most recent deployed contract
+        Computer = await ethers.getContract("Computer", deployer)
         LongPool = await ethers.getContract("LongPool", deployer)
+        ShortPool = await ethers.getContract("ShortPool", deployer)
     })
 
     describe("Test adresses", async function () {
-        it("2.1.1 The pool is linked to the correct asset address", async function () {
-            const assetAddress = await LongPool.asset()
+        it("t1.1.1 The pool is linked to the correct asset address", async function () {
+            const assetAddress = await LongPool.assetAddress()
             console.log("Fetched ERC20 address: " + assetAddress)
             console.log("Correct ERC20 address: " + ERC20.address)
             assert.equal(assetAddress, ERC20.address)
         })
-        it("2.1.2 The pool is linked to the correct balancer address", async function () {
-            const balancerAddress = await LongPool.balancerAddress()
-            console.log("Fetched balancer address: " + balancerAddress)
-            console.log("Correct ERC20 address: " + Balancer.address)
-            assert.equal(balancerAddress, Balancer.address)
+        it("t1.1.2 The pool is linked to the correct computer address", async function () {
+            const computerAddress = await LongPool.computerAddress()
+            console.log("Fetched computer address: " + computerAddress)
+            console.log("Correct ERC20 address: " + Computer.address)
+            assert.equal(computerAddress, Computer.address)
         })
     })
 
     describe("Test deposit()", async function () {
         
-        it("2.2 Deposit changes depositor and Pool asset balances correctly", async function () {
+        it("t1.2 Deposit changes depositor and Pool asset balances correctly", async function () {
             const assetBalanceLPT1 = await ERC20.balanceOf(LongPool.address)
             console.log("Asset in Long Pool: " + (assetBalanceLPT1).toString())
             const accounts = await ethers.getSigners()
@@ -42,6 +44,8 @@ describe("LongPool", async function () {
             console.log("Depositor asset before anything: " + (assetBalanceA0T1).toString())
             await ERC20.approve(LongPool.address, allowedValue)
             console.log("Depositor approves LongPool contract for " + allowedValue)
+            const longPoolEquity =  await Computer.longPoolEquity()
+            console.log("Long Pool equity: " + longPoolEquity)
             await LongPool.deposit(assetDeposit, accounts[0].address)
             console.log("Depositor deposits " + assetDeposit)
             const assetBalanceResponse = await ERC20.balanceOf(accounts[0].address)
@@ -53,12 +57,12 @@ describe("LongPool", async function () {
             const assetBalanceLPResponseBis = await LongPool.totalAssets()
             console.log("Long Pool total asset (via totalAssets()): " + (assetBalanceLPResponseBis).toString())
             assert.equal(assetBalanceLPResponse.toString(),assetBalanceLPResponseBis.toString())
-            const assetBalanceLPT2 = Number(assetBalanceLPT1+assetDeposit)
+            const assetBalanceLPT2 = Number(assetBalanceLPT1)+Number(assetDeposit)
             console.log("Computed asset in Long Pool: " + assetBalanceLPT2)
             assert.equal(assetBalanceLPResponse,assetBalanceLPT2)
         })
 
-        it("2.3 Deposit changes depositor shares correctly", async function () {
+        it("t1.3 Deposit changes depositor shares correctly", async function () {
             const accounts = await ethers.getSigners()
             const shareBalanceA0T1 = await LongPool.balanceOf(accounts[0].address)
             console.log("Depositor shares: " + (shareBalanceA0T1).toString())
@@ -68,11 +72,12 @@ describe("LongPool", async function () {
             console.log("Depositor deposits " + assetDeposit)
             const shareBalanceResponse = await LongPool.balanceOf(accounts[0].address)
             console.log("Depositor shares AFTER deposit: " + (shareBalanceResponse).toString())
-            const shareBalanceA0T2 = shareBalanceA0T1+assetDeposit
+            const shareBalanceA0T2 = Number(shareBalanceA0T1)+Number(assetDeposit)
+            console.log("Depositor shares calculated: " + shareBalanceA0T2)
             assert.equal(shareBalanceResponse, Number(shareBalanceA0T2))
         })
 
-        it("2.4 Deposit changes depositor_2 shares correctly", async function () {
+        it("t1.4 Deposit changes depositor_2 shares correctly", async function () {
             const accounts = await ethers.getSigners()
             const shareBalanceA0T1 = await LongPool.balanceOf(accounts[0].address)
             console.log("Depositor_1 intial shares: " + (shareBalanceA0T1).toString())
@@ -88,8 +93,8 @@ describe("LongPool", async function () {
             console.log("Depositor_2 connects to the pool")
             await LPConnectedAccount.approve(LongPool.address, allowedValue)
             console.log("Depositor_2 approves contract for " + allowedValue)
-            await LongPool.deposit(assetDeposit, accounts[1].address)
-            console.log("Depositor_2 deposits " + assetDeposit)
+            await LongPool.deposit(assetDeposit2, accounts[1].address)
+            console.log("Depositor_2 deposits " + assetDeposit2)
             const shareBalanceResponse = await LongPool.balanceOf(accounts[1].address)
             console.log("Depositor_2 shares after deposit: " + (shareBalanceResponse).toString())
         })
@@ -97,7 +102,7 @@ describe("LongPool", async function () {
 
     describe("Test withdraw()", async function () {
 
-        it("2.5 Withdraw changes depositor and Pool asset balances correctly", async function () {
+        it("t1.5 Withdraw changes depositor and Pool asset balances correctly", async function () {
             const assetBalanceLPT1 = await LongPool.totalAssets()
             console.log("Long Pool total asset: " + (assetBalanceLPT1).toString())
             const accounts = await ethers.getSigners()
@@ -124,7 +129,7 @@ describe("LongPool", async function () {
             console.log("Long Pool total asset: " + (assetBalanceLPT3).toString())
         })
 
-        it("2.6 Withdraw changes depositor shares correctly", async function () {
+        it("t1.6 Withdraw changes depositor shares correctly", async function () {
             const accounts = await ethers.getSigners()
             const shareBalanceA0T1 = await LongPool.balanceOf(accounts[0].address)
             console.log("Depositor intial shares: " + (shareBalanceA0T1).toString())
@@ -138,9 +143,46 @@ describe("LongPool", async function () {
             console.log("Depositor withdraw: " + assetWithdraw)
             const shareBalanceResponse = await LongPool.balanceOf(accounts[0].address)
             console.log("Depositor shares after withdraw: " + (shareBalanceResponse).toString())
-            const shareBalanceA0T2 = shareBalanceA0T1+assetDeposit-assetWithdraw
+            const shareBalanceA0T2 = Number(shareBalanceA0T1)+Number(assetDeposit)-Number(assetWithdraw)
             console.log("Depositor shares after withdraw (calculated): " + shareBalanceA0T2)
             assert.equal((shareBalanceResponse).toString(), Number(shareBalanceA0T2))
+        })
+
+        it("t1.7 Withdraw changes depositor and Pool asset balances correctly after a price change", async function () {
+            await Computer.setPrice(100)
+            const price = await Computer.getPrice()
+            console.log("Initial price: " + price)
+            const assetBalanceLPT1 = await LongPool.totalAssets()
+            console.log("Long Pool total asset: " + (assetBalanceLPT1).toString())
+            const accounts = await ethers.getSigners()
+            await ERC20.approve(LongPool.address, allowedValue)
+            await LongPool.deposit(assetDeposit, accounts[0].address)
+            console.log("Depositor deposits in long pool: " + assetDeposit)
+            const assetBalanceA0T2 = await ERC20.balanceOf(accounts[0].address)
+            console.log("Depositor asset balance after deposit: " + (assetBalanceA0T2).toString())
+            const assetBalanceLPT2 = await LongPool.totalAssets()
+            console.log("Long Pool total asset: " + (assetBalanceLPT2).toString())
+            await ERC20.approve(ShortPool.address, allowedValue)
+            await ShortPool.deposit(assetDeposit2, accounts[0].address)
+            console.log("Depositor deposits in short pool: " + assetDeposit2)
+            const assetBalanceA0T3 = await ERC20.balanceOf(accounts[0].address)
+            console.log("Depositor asset balance after the two deposits: " + (assetBalanceA0T3).toString())
+            const assetBalanceSPT3 = await ShortPool.totalAssets()
+            console.log("Short Pool total asset: " + (assetBalanceSPT3).toString())
+            await Computer.setPrice(120)
+            const price2 = await Computer.getPrice()
+            console.log("Updated price: " + price2)
+            maxWithdraw = await LongPool.maxWithdraw(accounts[0].address)
+            console.log("Depositor maximum assets which can be withdrawn: " + maxWithdraw)
+            await LongPool.withdraw(maxWithdraw, accounts[0].address, accounts[0].address)
+            console.log("Depositor withdraw: " + maxWithdraw)
+            const assetBalanceA0Response = await ERC20.balanceOf(accounts[0].address)
+            console.log("Depositor asset balance after withdrawal: " + (assetBalanceA0Response).toString())
+            // const assetBalanceA0T4 = Number(assetBalanceA0T1)-Number(assetDeposit)+Number(assetWithdraw)
+            // console.log("Depositor assets after withdraw (calculated): " + assetBalanceA0T3)
+            // assert.equal((assetBalanceA0Response).toString(), assetBalanceA0T3)
+            const assetBalanceLPT3 = await LongPool.totalAssets()
+            console.log("Long Pool total asset: " + (assetBalanceLPT3).toString())
         })
 
         //     // 

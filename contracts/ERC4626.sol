@@ -127,7 +127,7 @@ abstract contract ERC4626 is ERC20, IERC4626 {
         require(shares <= maxMint(receiver), "ERC4626: mint more than max");
         uint256 assets = previewMint(shares);
         _deposit(_msgSender(), receiver, assets, shares);
-        // the one who deposits, the one wh receives shares, value deposited, shares received
+        // the one who deposits, the one who receives shares, value deposited, shares received
         return assets;
     }
 
@@ -151,11 +151,9 @@ abstract contract ERC4626 is ERC20, IERC4626 {
         address receiver,
         address owner
     ) public virtual override returns (uint256) {
-        require(shares <= maxRedeem(owner), "ERC4626: redeem more than max");
-
+        require(shares <= maxRedeem(owner), "ERCtotalAssets4626: redeem more than max");
         uint256 assets = previewRedeem(shares);
         _withdraw(_msgSender(), receiver, owner, assets, shares);
-
         return assets;
     }
 
@@ -174,16 +172,17 @@ abstract contract ERC4626 is ERC20, IERC4626 {
     }
     /*
         a = asset
-        B = totalAssets()
-        T = totalSupply()
+        A = totalAssets()
+        S = totalSupply()
         s = shares to mint
-        (T + s) / T = (a + B) / B 
-        s = aT / B
+        (S + s) / S = (a + A) / B => s / S = a / A
+        s = a S / A
     */
 
     /**
-     * @dev Internal conversion function (from assets to shares) to apply when the vault is empty.
-     * NOTE: Make sure to keep this function consistent with {_initialConvertToAssets} when overriding it.
+     * @dev Internal conversion function (from assets to shares) to apply when the vault
+     * is empty. NOTE: Make sure to keep this function consistent with
+     * {_initialConvertToAssets} when overriding it.
      */
     function _initialConvertToShares(uint256 assets, Math.Rounding)
     internal view virtual returns (uint256 shares) {
@@ -202,11 +201,11 @@ abstract contract ERC4626 is ERC20, IERC4626 {
     }
     /*
         a = asset
-        B = totalAsset()
-        T = totalSupply()
+        A = totalAsset()
+        S = totalSupply()
         s = shares to burn
-        (T - s) / T = (B - a) / B
-        a = sB / T
+        (A - a) / A = (S - s) / S
+        a / A = s / S
     */
 
     /**
@@ -234,11 +233,10 @@ abstract contract ERC4626 is ERC20, IERC4626 {
         uint256 shares
     ) internal virtual {
         SafeERC20.safeTransferFrom(
-            asset,            // _asset est transféré du caller au contrat
-            caller,            // from : _msgSender() / depositor
-            address(this),     // to : caller autorise avant le contrat
-            assets);           // value : montant asset transféré
-        //? shareHoldings[msg.sender] += shares;
+            asset,             // _asset transferred from caller to contract
+            caller,            // from depositor: _msgSender() (must give allowance before)
+            address(this),     // to: ERC4626 contract
+            assets);           // amount of assets transferred to contract
         _mint(receiver, shares);
 
         emit Deposit(caller, receiver, assets, shares);

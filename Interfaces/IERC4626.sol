@@ -133,7 +133,6 @@ interface IERC4626 is IERC20, IERC20Metadata {
      *   contract before the mint execution, and are accounted for during mint.
      * - MUST revert if all of shares cannot be minted (due to deposit limit being reached,
      *   slippage, the user not approving enough underlying tokens to the Vault contract, etc).
-     *
      * NOTE: most implementations will require pre-approval of the Vault with the Vault’s underlying asset token.
      */
     function mint(uint256 shares, address receiver) external returns (uint256 assets);
@@ -179,8 +178,8 @@ interface IERC4626 is IERC20, IERC20Metadata {
     ) external returns (uint256 shares);
 
     /**
-     * @dev Returns the maximum amount of Vault shares that can be redeemed from the owner balance in the Vault,
-     * through a redeem call.
+     * @dev Returns the maximum amount of Vault shares that can be redeemed from the owner
+     * balance in the Vault, through a redeem call.
      * - MUST return a limited value if owner is subject to some withdrawal limit or timelock.
      * - MUST return balanceOf(owner) if owner is not subject to any withdrawal limit or timelock.
      * - MUST NOT revert.
@@ -197,8 +196,9 @@ interface IERC4626 is IERC20, IERC20Metadata {
      *   redemption would be accepted, regardless if the user has enough shares, etc.
      * - MUST be inclusive of withdrawal fees. Integrators should be aware of the existence of withdrawal fees.
      * - MUST NOT revert.
-     * NOTE: any unfavorable discrepancy between convertToAssets and previewRedeem SHOULD be considered slippage in
-     * share price or some other type of condition, meaning the depositor will lose assets by redeeming.
+     * NOTE: any unfavorable discrepancy between convertToAssets and previewRedeem SHOULD
+     * be considered slippage in share price or some other type of condition, meaning the
+     * depositor will lose assets by redeeming.
      */
     function previewRedeem(uint256 shares) external view returns (uint256 assets);
 

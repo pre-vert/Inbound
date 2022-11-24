@@ -30,6 +30,10 @@ contract ShortPool is ERC4626, Pool {
         owner = msg.sender;
     }
 
+  function AssetAdress() public view  returns (address) {
+    return address(asset);
+  }
+  
     /**
    * @notice (Re)sets the address of the long pool
    */
