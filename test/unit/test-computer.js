@@ -1,9 +1,11 @@
 const { deployments, ethers } = require("hardhat")
 const { assert, expect } = require("chai")
-const assetDeposit = 10
+const assetDeposit = 20
+const assetDeposit2 = 15
 const allowedValue = 50
 // const rebalancedValue = 4
 // const assetWithdraw = 2
+const scale = 10e8;
 
 describe("Computer", async function () {
     let Computer, ERC20, LongPool, ShortPool, deployer
@@ -58,9 +60,9 @@ describe("Computer", async function () {
             console.log("Forward price: " + forwardPrice)
             const delta = await Computer.delta()
             console.log("Delta: " + delta)
-            const longSolvent = await Computer.longSolvent()
+            const longSolvent = await Computer.solvent(1)
             console.log("Long pool solvent: " + longSolvent)
-            const shortSolvent = await Computer.shortSolvent()
+            const shortSolvent = await Computer.solvent(-1)
             console.log("Short pool solvent: " + shortSolvent)
             const longSolventCalculated = Math.round((1 + delta * (price/forwardPrice - 1))*10e8)
             console.log("Calculated long pool solvent: " + longSolventCalculated)
@@ -79,9 +81,9 @@ describe("Computer", async function () {
             console.log("Long pool equity: " + longPoolEquity)
             const shortPoolEquity = await Computer.shortPoolEquity()
             console.log("Short pool equity: " + shortPoolEquity)
-            const longSolvent = await Computer.longSolvent()
+            const longSolvent = await Computer.solvent(1)
             console.log("Long pool solvent: " + longSolvent)
-            const shortSolvent = await Computer.shortSolvent()
+            const shortSolvent = await Computer.solvent(-1)
             console.log("Short pool solvent: " + shortSolvent)
             const allow = await Computer.allowDeposit()
             console.log("Allow deposit: " + allow)
@@ -102,13 +104,41 @@ describe("Computer", async function () {
             console.log("Long pool equity: " + longPoolEquity)
             const shortPoolEquity = await Computer.shortPoolEquity()
             console.log("Short pool equity: " + shortPoolEquity)
-            const longSolvent = await Computer.longSolvent()
+            const longSolvent = await Computer.solvent(1)
             console.log("Long pool solvent: " + longSolvent)
-            const shortSolvent = await Computer.shortSolvent()
+            const shortSolvent = await Computer.solvent(-1)
             console.log("Short pool solvent: " + shortSolvent)
             const allow = await Computer.allowDeposit()
             console.log("Allow deposit: " + allow)
             assert.equal(allow, false)
+        })
+
+        it("t3.6 Long and short pool equity correctly calculated", async function () {
+            await Computer.setPrice(100)
+            console.log("Initial price: " + await Computer.getPrice())
+            console.log("Long pool equity: " + await Computer.longPoolEquity())
+            console.log("Short pool equity: " + await Computer.shortPoolEquity())
+
+            const accounts = await ethers.getSigners()
+            await ERC20.approve(LongPool.address, allowedValue)
+            await LongPool.deposit(assetDeposit, accounts[0].address)
+            console.log("Depositor_1 deposits in long pool: " + assetDeposit)
+            await ERC20.approve(ShortPool.address, allowedValue)
+            await ShortPool.deposit(assetDeposit2, accounts[0].address)
+            console.log("Depositor_1 deposits in short pool: " + assetDeposit2)
+
+            console.log("Long pool equity: " + await Computer.longPoolEquity())
+            console.log("Short pool equity: " + await Computer.shortPoolEquity())
+
+            await Computer.setPrice(125)
+            console.log("Updated price: " + await Computer.getPrice())
+            console.log("Long pool equity: " + await Computer.longPoolEquity())
+            console.log("Short pool equity: " + await Computer.shortPoolEquity())
+
+            await Computer.setPrice(70)
+            console.log("Updated price: " + await Computer.getPrice())
+            console.log("Long pool equity: " + await Computer.longPoolEquity())
+            console.log("Short pool equity: " + await Computer.shortPoolEquity())
         })
 
     })

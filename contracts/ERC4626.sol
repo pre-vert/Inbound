@@ -29,27 +29,11 @@ import "./Utils/Math.sol";
 abstract contract ERC4626 is ERC20, IERC4626 {
     using Math for uint256;
 
-    ERC20 internal asset;                    // base token
-    // uint256 public price = 1;
-    // uint256 public oldPrice = price;
+    ERC20 internal asset;
 
     constructor(ERC20 asset_){   
         asset = asset_;
     }
-
-    /**************************************************************** */
-    //              Price (non-ERC4626/Vault logic)
-    /**************************************************************** */
-
-    // function transferToPool(uint _amount, address _poolAddress) private {
-    //     require(_poolAddress != address(0), "cannot be 0 address");
-    //     require(_amount <= totalAssets(), "cannot transfer more than total asset");
-    //     transfer(_poolAddress, _amount);
-    // }
-
-    /**************************************************************** */
-    //                     ERC4626 logic
-    /**************************************************************** */
 
     /** @dev See {IERC4626-asset}. */
     function assetAddress() public view virtual override returns (address) {
@@ -118,7 +102,7 @@ abstract contract ERC4626 is ERC20, IERC4626 {
         require(assets > 0, "ERC4626: Deposit less than Zero");
         uint256 shares = previewDeposit(assets);
         _deposit(_msgSender(), receiver, assets, shares);
-        // the one who deposits, the one who receives shares, value deposited, shares received
+        // the one who deposits (the caller), the one who receives shares, value deposited, shares received
         return shares;
     }
 
@@ -206,6 +190,7 @@ abstract contract ERC4626 is ERC20, IERC4626 {
         s = shares to burn
         (A - a) / A = (S - s) / S
         a / A = s / S
+        a = A s / S
     */
 
     /**

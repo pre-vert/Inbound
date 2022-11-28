@@ -1,13 +1,21 @@
-# Sample Hardhat Project
+# Elastic Futures
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+This note presents an innovative financial arrangement allowing traders to take leveraged long and short positions against each others. Positions have a common forward price as in futures contracts but no preset duration. The price range over which leverage tokens are traded broadens when winning traders take their profit, which extends the life-time of the futures. When the price eventually exits the trading interval, the contract freezes and enters a settlement phase. See more detailed [presentation](https://hackmd.io/@pre-vert/elastic_non_technical).
 
-Try running some of the following tasks:
+## Functionning
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
-```
+Two permissionless pools, a long pool and a short pool, are collateralized by users who seek leveraged long or short positions. The two pools echange PNL when users deposit or withdraw their funds.
+
+## Architecture
+
+The protocol re-uses ERC20 and ERC4626 Openzeppelin contracts:
+
+            ERC20 contract
+                   |
+            ERC4626 contract
+              |           |
+          Short pool   Long pool
+               \          /
+                 Computer
+
+Computer calculates PNL exchanged between the two pools.

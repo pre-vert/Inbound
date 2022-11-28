@@ -177,14 +177,9 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 
     /**
      * @dev Moves `amount` of tokens from `from` to `to`.
-     *
-     * This internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
+     * This internal function is equivalent to {transfer}, and can be used to e.g. 
+     * implement automatic token fees, slashing mechanisms, etc. Emits a {Transfer} event.
      * Requirements:
-     *
      * - `from` cannot be the zero address.
      * - `to` cannot be the zero address.
      * - `from` must have a balance of at least `amount`.
@@ -287,8 +282,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     /**
      * @dev Hook that is called before any transfer of tokens. This includes minting and burning.
      * Calling conditions:
-     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * will be transferred to `to`.
+     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens will be transferred to `to`.
      * - when `from` is zero, `amount` tokens will be minted for `to`.
      * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
      * - `from` and `to` are never both zero.
@@ -304,8 +298,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * @dev Hook that is called after any transfer of tokens. This includes
      * minting and burning.
      * Calling conditions:
-     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * has been transferred to `to`.
+     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens has been transferred to `to`.
      * - when `from` is zero, `amount` tokens have been minted for `to`.
      * - when `to` is zero, `amount` of ``from``'s tokens have been burned.
      * - `from` and `to` are never both zero.
